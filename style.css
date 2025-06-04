@@ -1,0 +1,76 @@
+
+body {
+  font-family: Arial, sans-serif;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  color: #333;
+}
+h1, h2 {
+  text-align: center;
+  color: #004a99;
+}
+form {
+  background: white;
+  padding: 1rem;
+  border-radius: 5px;
+  box-shadow: 0 0 10px #ccc;
+  margin-bottom: 2rem;
+}
+label {
+  display: block;
+  margin-top: 1rem;
+}
+input, textarea, button {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+button {
+  background-color: #004a99;
+  color: white;
+  border: none;
+  margin-top: 1.5rem;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #003370;
+}
+#form-message {
+  margin-top: 1rem;
+  font-weight: bold;
+  color: green;
+  text-align: center;
+}
+#calendar {
+  background: white;
+  padding: 1rem;
+  border-radius: 5px;
+  box-shadow: 0 0 10px #ccc;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.booking-entry {
+  background-color: #004a99;
+  color: white;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 3px;
+}
+.booking-entry button {
+  float: right;
+  background: #cc0000;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0 0.5rem;
+}
+.booking-entry button:hover {
+  background: #990000;
+}
