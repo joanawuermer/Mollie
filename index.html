@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Molliebuchung</title>
+  <link rel="stylesheet" href="style.css" />
+<!-- Füge das in index.html ein, im <head> oder vor </body> -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBSYxO_1Xa3eDtaqtQUOEUEBfNTdWlrLms",
+    authDomain: "molliebuchung.firebaseapp.com",
+    projectId: "molliebuchung",
+    storageBucket: "molliebuchung.firebasestorage.app",
+    messagingSenderId: "482937422053",
+    appId: "1:482937422053:web:9a558feff27673fdbb940c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth();
+  const db = getFirestore(app);
+
+  const form = document.getElementById('booking-form');
+  const calendarDiv = document.getElementById('calendar');
+  const formMessage = document.getElementById('form-message');
+
+  let currentUser = null;
+
+  async function loadBookings() {
+    const q = query(collection(db, "bookings"), orderBy("start"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async function hasConflict(newStart, newEnd, bookings) {
+    for (const booking of bookings) {
+      const start = new Date(booking.start);
+      const end = new Date(booking.end);
+      if (newStart <= end && newEnd >= start) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function renderCalendar(bookings) {
+    calendarDiv.innerHTML = '';
+    if (bookings.length === 0) {
+      calendarDiv.innerHTML = '<p>Keine Buchungen vorhanden.</p>';
+      return;
+    }
+
+    for (const booking of bookings) {
+      const entry = document.createElement('div');
+      entry.className = 'booking-entry';
+      entry.textContent = `${booking.name} von ${booking.start} bis ${booking.end}`;
+
+      if (booking.uid === currentUser.uid) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'X';
+        cancelBtn.title = 'Buchung stornieren';
+        cancelBtn.addEventListener('click', async () => {
+          if (confirm('Buchung wirklich stornieren?')) {
+            await deleteDoc(doc(db, "bookings", booking.id));
+            const updated = await loadBookings();
+            renderCalendar(updated);
+          }
+        });
+        entry.appendChild(cancelBtn);
+      }
+
+      calendarDiv.appendChild(entry);
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formMessage.textContent = '';
+
+    const name = form.name.value.trim();
+    const start = form.start.value;
+    const end = form.end.value;
+    const comment = form.comment.value.trim();
+
+    if (!name || !start || !end) {
+      formMessage.style.color = 'red';
+      formMessage.textContent = 'Bitte alle Pflichtfelder ausfüllen.';
+      return;
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (startDate > endDate) {
+      formMessage.style.color = 'red';
+      formMessage.textContent = 'Startdatum darf nicht nach Enddatum liegen.';
+      return;
+    }
+
+    const bookings = await loadBookings();
+    if (await hasConflict(startDate, endDate, bookings)) {
+      formMessage.style.color = 'red';
+      formMessage.textContent = 'Der Zeitraum ist bereits gebucht.';
+      return;
+    }
+
+    await addDoc(collection(db, "bookings"), {
+      name, start, end, comment,
+      uid: currentUser.uid,
+      created: new Date().toISOString()
+    });
+
+    const updated = await loadBookings();
+    renderCalendar(updated);
+
+    formMessage.style.color = 'green';
+    formMessage.textContent = 'Buchung gespeichert!';
+    form.reset();
+  });
+
+  // Start: Firebase-Login (anonym)
+  signInAnonymously(auth).catch(console.error);
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      const bookings = await loadBookings();
+      renderCalendar(bookings);
+    }
+  });
+</script>
+
+</head>
+<body>
+  <h1>Molliebuchung</h1>
+
+  <section id="form-section">
+    <h2>Neue Buchung</h2>
+    <form id="booking-form">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required />
+
+      <label for="start">Startdatum:</label>
+      <input type="date" id="start" name="start" required />
+
+      <label for="end">Enddatum:</label>
+      <input type="date" id="end" name="end" required />
+
+      <label for="comment">Kommentar:</label>
+      <textarea id="comment" name="comment"></textarea>
+
+      <button type="submit">Buchen</button>
+    </form>
+    <div id="form-message"></div>
+  </section>
+
+  <section id="calendar-section">
+    <h2>Belegte Zeiträume</h2>
+    <div id="calendar"></div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
